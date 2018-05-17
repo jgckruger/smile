@@ -1,34 +1,39 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // including the database connection file
-include_once("config.php");
+//include_once("../../header.php");
+include_once("../../db/DBClass.php");
+$banco = new DBClass();
 
 if(isset($_POST['update']))
-{	
+{
 
-	$id = mysqli_real_escape_string($mysqli, $_POST['id']);
-	
-	$name = mysqli_real_escape_string($mysqli, $_POST['name']);
-	$age = mysqli_real_escape_string($mysqli, $_POST['age']);
-	$email = mysqli_real_escape_string($mysqli, $_POST['email']);	
-	
+	$id = $banco->escapeString($_POST['id']);
+
+	$nome = $banco->escapeString($_POST['nome']);
+	$nascimento = $banco->escapeString($_POST['nascimento']);
+	$email = $banco->escapeString($_POST['email']);
+
 	// checking empty fields
-	if(empty($name) || empty($age) || empty($email)) {	
-			
-		if(empty($name)) {
+	if(empty($nome) || empty($nascimento) || empty($email)) {
+
+		if(empty($nome)) {
 			echo "<font color='red'>Name field is empty.</font><br/>";
 		}
-		
-		if(empty($age)) {
+
+		if(empty($nascimento)) {
 			echo "<font color='red'>Age field is empty.</font><br/>";
 		}
-		
+
 		if(empty($email)) {
 			echo "<font color='red'>Email field is empty.</font><br/>";
-		}		
-	} else {	
+		}
+	} else {
 		//updating the table
-		$result = mysqli_query($mysqli, "UPDATE users SET name='$name',age='$age',email='$email' WHERE id=$id");
-		
+		$result = $banco->query("UPDATE funcionario SET nome='$nome',nascimento='$nascimento',email='$email' WHERE idFuncionario=$id");
+
 		//redirectig to the display page. In our case, it is index.php
 		header("Location: index.php");
 	}
@@ -39,35 +44,31 @@ if(isset($_POST['update']))
 $id = $_GET['id'];
 
 //selecting data associated with this particular id
-$result = mysqli_query($mysqli, "SELECT * FROM users WHERE id=$id");
+$result = $banco->query("SELECT * FROM funcionario WHERE idFuncionario=$id");
 
-while($res = mysqli_fetch_array($result))
+while($res = $banco->fetchArray($result))
 {
-	$name = $res['name'];
-	$age = $res['age'];
+	$nome = $res['nome'];
+	$nascimento = $res['nascimento'];
 	$email = $res['email'];
 }
 ?>
-<html>
-<head>	
-	<title>Edit Data</title>
-</head>
 
-<body>
-	<a href="index.php">Home</a>
+<main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+			<h2>Editar Funcionário</h2>
 	<br/><br/>
-	
-	<form name="form1" method="post" action="edit.php">
-		<table border="0">
-			<tr> 
-				<td>Name</td>
-				<td><input type="text" name="name" value="<?php echo $name;?>"></td>
+
+	<form action="edit.php" method="post" name="form1">
+		<table width="25%" border="0">
+			<tr>
+				<td>Nome</td>
+				<td><input type="text" name="nome" value="<?php echo $nome;?>"></td>
 			</tr>
-			<tr> 
-				<td>Age</td>
-				<td><input type="text" name="age" value="<?php echo $age;?>"></td>
+			<tr>
+				<td>Nascimento</td>
+				<td><input type="date" name="nascimento" value="<?php echo $nascimento;?>"></td>
 			</tr>
-			<tr> 
+			<tr>
 				<td>Email</td>
 				<td><input type="text" name="email" value="<?php echo $email;?>"></td>
 			</tr>
@@ -77,5 +78,9 @@ while($res = mysqli_fetch_array($result))
 			</tr>
 		</table>
 	</form>
-</body>
-</html>
+</main>
+
+
+<?php
+//require_once("../../footer.php");
+ ?>

@@ -1,5 +1,5 @@
 <?php
-//require_once("../../header.php");
+require_once("../../header.php");
 //including the database connection file
 require_once("../../db/DBClass.php");
 $banco = new DBClass();
@@ -40,7 +40,7 @@ if(isset($_POST['Submit'])) {
 		//insert data to database
 		$resultado = $banco->query("INSERT INTO funcionario(nome,nascimento,email) VALUES('$nome','$nascimento','$email')");
 		//display success message
-		echo "<p>entrou aqui n era</p>";
+		//echo "<p>entrou aqui n era</p>";
 		echo "<font color='green'>Funcionario adicionado com sucesso!";
 		echo "<br><a href='index.php'>Ver resultado</a>";
 	}
@@ -48,5 +48,5 @@ if(isset($_POST['Submit'])) {
 ?>
 </main>
 <?php
-//require_once("../../footer.php");
+require_once("../../footer.php");
 ?>

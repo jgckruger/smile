@@ -22,12 +22,12 @@ $resultado = $banco->query("SELECT * FROM funcionario WHERE 1");
          	<?php
 
           while ($row = $resultado->fetch_assoc()) {
-            var_dump($row);
+            //var_dump($row);
          		echo "<tr>";
          		echo "<td>".$row['nome']."</td>";
          		echo "<td>".$row['nascimento']."</td>";
          		echo "<td>".$row['email']."</td>";
-         		echo "<td><a href=\"edit.php?id=$row[id]\">Edit</a> | <a href=\"delete.php?id=$row[id]\" onClick=\"return confirm('Are you sure you want to delete?')\">Delete</a></td>";
+         		echo "<td><a href=\"edit.php?id=$row[idFuncionario]\">Edit</a> | <a href=\"delete.php?id=$row[idFuncionario]\" onClick=\"return confirm('Are you sure you want to delete?')\">Delete</a></td>";
          	}
          	?>
          	</table>
