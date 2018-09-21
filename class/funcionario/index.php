@@ -2,7 +2,7 @@
 require_once("../../header.php");
 require_once("../../db/DBClass.php");
 $banco = new DBClass();
-$resultado = $banco->query("SELECT * FROM funcionario WHERE 1");
+$resultado = $banco->query("SELECT `idFuncionario`, `nome`, `email`, DATE_FORMAT(`nascimento`,'%d/%m/%Y') AS `nascimento`, cpf FROM `funcionario` WHERE 1  ");
  ?>
  <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
        <h2>Funcionários</h2>
@@ -11,12 +11,14 @@ $resultado = $banco->query("SELECT * FROM funcionario WHERE 1");
        </a>
        <br/><br/>
        <div class="table-responsive">
-         <table class="table table-striped table-sm">
+         <table id="tabela" class="table table-striped table-sm">
            <thead>
              <tr>
                <th>Nome</th>
                <th>Nascimento</th>
                <th>Email</th>
+               <th>CPF</th>
+               <th>Opções</th>
              </tr>
            </thead>
          	<?php
@@ -27,7 +29,8 @@ $resultado = $banco->query("SELECT * FROM funcionario WHERE 1");
          		echo "<td>".$row['nome']."</td>";
          		echo "<td>".$row['nascimento']."</td>";
          		echo "<td>".$row['email']."</td>";
-         		echo "<td><a href=\"edit.php?id=$row[idFuncionario]\">Edit</a> | <a href=\"delete.php?id=$row[idFuncionario]\" onClick=\"return confirm('Are you sure you want to delete?')\">Delete</a></td>";
+            echo "<td id=\"cpf\">".$row['cpf']."</td>";
+         		echo "<td><a href=\"edit.php?id=".$row[idFuncionario]."\">Edit</a> | <a href=\"delete.php?id=$row[idFuncionario]\" onClick=\"return confirm('Tem certeza que deseja apaga a entrada?')\">Apagar</a></td>";
          	}
          	?>
          	</table>

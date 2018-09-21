@@ -22,6 +22,10 @@ require_once("../../header.php");
 				<td><input type="text" name="email"></td>
 			</tr>
 			<tr>
+				<td>CPF</td>
+				<td><input type="text" id="cpf" name="cpf"></td>
+			</tr>
+			<tr>
 				<td></td>
 				<td><input type="submit" name="Submit" value="Add"></td>
 			</tr>
