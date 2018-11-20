@@ -1,7 +1,17 @@
 <?php
-require_once("../../header.php");
 require_once("../../db/DBClass.php");
 $banco = new DBClass();
+
+$id  = $_POST["idFuncionario"];
+$query = "SELECT nome FROM funcionario Where idFuncionario='".$id."' limit 1";
+$resultado = $banco->query($query);
+$nome = "";
+while ($row = $resultado->fetch_assoc()) {
+	$nome = $row;
+}
+
+$title = "Horas trabalhadas no mês - ".$nome['nome'];
+require_once("../../header.php");
 
 // Calcula número de dias do mês
 function days_in_month($month, $year){
@@ -11,7 +21,7 @@ function days_in_month($month, $year){
 // Atribui os parâmetros do POST para essas variáveis
 
 
-echo "paopaopao";
+//echo "paopaopao";
 $id  = $_POST["idFuncionario"];
 echo $id;
 $partes = explode("-", $_POST["inicio"]);

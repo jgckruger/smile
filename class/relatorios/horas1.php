@@ -1,4 +1,5 @@
 <?php
+$title = "Horas trabalhadas no mês";
 require_once("../../header.php");
 require_once("../../db/DBClass.php");
 $banco = new DBClass();

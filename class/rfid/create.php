@@ -1,4 +1,5 @@
 <?php
+$title = "Inserir RFID";
 require_once("../../header.php");
 require_once("../../db/DBClass.php");
 $banco = new DBClass();

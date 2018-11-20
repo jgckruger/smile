@@ -1,4 +1,5 @@
 <?php
+$title = "Novo administrador";
 require_once("../../header.php");
 //including the database connection file
 ?>

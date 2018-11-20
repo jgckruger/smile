@@ -3,6 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 // including the database connection file
+$title = "Editar administrador";
 include_once("../../header.php");
 include_once("../../db/DBClass.php");
 $banco = new DBClass();

@@ -1,4 +1,5 @@
 <?php
+$title = "Início";
 require_once('header.php');
 ?>
 

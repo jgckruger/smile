@@ -11,7 +11,7 @@ session_start();
     <meta name="author" content="Joao Kruger">
     <link rel="icon" href="/smile/icons/favicon.ico">
 
-    <title>Dashboard Template for Bootstrap</title>
+    <title><?php echo $title;?></title>
 
     <!-- Bootstrap core CSS -->
     <link href="/smile/css/4.1/dist/css/bootstrap.min.css" rel="stylesheet">

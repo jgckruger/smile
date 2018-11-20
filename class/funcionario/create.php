@@ -1,4 +1,5 @@
 <?php
+$title = "Inserir funcionário";
 require_once("../../header.php");
 //including the database connection file
 ?>

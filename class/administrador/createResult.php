@@ -1,4 +1,5 @@
 <?php
+$title = "Administrador inserido";
 require_once("../../header.php");
 //including the database connection file
 require_once("../../db/DBClass.php");
