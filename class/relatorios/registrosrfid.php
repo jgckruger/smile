@@ -6,7 +6,8 @@ $banco = new DBClass();
 $resultado = $banco->query("SELECT `id`, `campo`, `horario` FROM `registrosRFID` WHERE 1 ORDER BY (horario) DESC");
 
  ?>
- <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+ <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4"><div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+</div>
        <h2>Registro das Passagens</h2>
        <br/><br/>
        <div class="table-responsive">
@@ -22,7 +23,7 @@ $resultado = $banco->query("SELECT `id`, `campo`, `horario` FROM `registrosRFID`
           while ($row = $resultado->fetch_assoc()) {
             //var_dump($row);
          		echo "<tr>";
-            echo "<td>".date('H:i:s d-m-Y',strtotime($row['horario']))."</td>";
+            echo "<td>".date('d/m/Y H:i:s',strtotime($row['horario']))."</td>";
          		echo "<td>".$row['campo']."</td>";
 
          		//echo "<td><a href=\"edit.php?id=$row[idFuncionario]\">Edit</a> | <a href=\"delete.php?id=$row[idFuncionario]\" onClick=\"return confirm('Are you sure you want to delete?')\">Delete</a></td>";

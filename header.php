@@ -1,3 +1,7 @@
+<?php
+session_start();
+?>
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -19,7 +23,17 @@
     <script type="text/javascript" language="javascript" src="/smile/js/jquery-3.3.1.js"></script>
   	<script type="text/javascript" language="javascript" src="/smile/js/1.10.19/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" language="javascript" src="/smile/js/1.10.19/js/dataTables.bootstrap4.min.js"></script>
-
+    <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.flash.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.html5.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js "></script>
+	<script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/plug-ins/1.10.10/sorting/datetime-moment.js"></script>
+	<link href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" rel="stylesheet">
+	<link href="https://cdn.datatables.net/buttons/1.5.2/css/buttons.dataTables.min.css" rel="stylesheet">
 
   </head>
 
@@ -29,7 +43,7 @@
       <input class="form-control form-control-dark w-100" type="text" placeholder="Buscar" aria-label="Buscar">
       <ul class="navbar-nav px-3">
         <li class="nav-item text-nowrap">
-          <a class="nav-link" href="#">Sair</a>
+          <a class="nav-link" <?php echo isset($_SESSION['login'])? 'href="/smile/logout.php">Sair' : 'href="/smile/login.php">Entrar';?></a>
         </li>
       </ul>
     </nav>
@@ -45,6 +59,13 @@
                   Painel de Controle <span class="sr-only">(current)</span>
                 </a>
               </li>
+               <?php echo isset($_SESSION['login'])? '
+               <li class="nav-item">
+                 <a class="nav-link" href="/smile/class/administrador">
+                   <span data-feather="users"></span>
+                   Administradores
+                 </a>
+               </li>
               <li class="nav-item">
                 <a class="nav-link" href="/smile/class/funcionario">
                   <span data-feather="users"></span>
@@ -58,7 +79,7 @@
                 </a>
               </li>
             </ul>
-
+            ': '';?>
             <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
               <span>Relatórios</span>
               <a class="d-flex align-items-center text-muted" href="#">
@@ -94,6 +115,12 @@
                 <a class="nav-link" href="/smile/class/relatorios/registrosrfid.php">
                   <span data-feather="file-text"></span>
                   Registros de RFID
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/smile/class/relatorios/horas1.php">
+                  <span data-feather="file-text"></span>
+                  Horas e pontos no mês
                 </a>
               </li>
               <!--<li class="nav-item">

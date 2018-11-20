@@ -1,0 +1,506 @@
+<pre>
+<font color="#434f54">// Armazenamento</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><font color="#000000">ArduinoJson</font><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>       <font color="#434f54">// JSON</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><font color="#000000">FS</font><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>                <font color="#434f54">// FS - Sistema de arquivos SPIFFS</font>
+
+<font color="#434f54">// Wi-Fi Manager</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><font color="#d35400">ESP8266WiFi</font><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>       <font color="#434f54">// ESP Wi-Fi</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><font color="#000000">DNSServer</font><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>         <font color="#434f54">// DNS - redireciona as requisições</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><b><font color="#d35400">ESP8266WebServer</font></b><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>  <font color="#434f54">// WebServer - Possibilita usar o ESP de servidor facilmente</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><b><font color="#d35400">WiFiManager</font></b><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>       <font color="#434f54">// Portal Captive</font>
+
+<font color="#434f54">// Funcionamento do projeto como um todo</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><b><font color="#d35400">SPI</font></b><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>               <font color="#434f54">// SPI - protocolo do MFRC522</font>
+<font color="#5e6d03">#include</font> <font color="#005c5f">"MFRC522.h"</font>           <font color="#434f54">// MFRC522 - RFID da Mifare</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><font color="#d35400">Wire</font><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font>              <font color="#434f54">// I2C - protocolo do display LCD</font>
+<font color="#5e6d03">#include</font> <font color="#434f54"><</font><b><font color="#d35400">LiquidCrystal_I2C</font></b><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">></font> <font color="#434f54">// LCD I2C - display para feedback das ações</font>
+
+
+
+<font color="#434f54">// Variáveis do dispositivo - preparadas para serem configuradas no portal Captive</font>
+<font color="#00979c">char</font> <font color="#000000">camera_entrada</font><font color="#000000">[</font><font color="#000000">128</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">char</font> <font color="#000000">camera_saida</font><font color="#000000">[</font><font color="#000000">128</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">char</font> <font color="#000000">identificador</font><font color="#000000">[</font><font color="#000000">64</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">char</font> <font color="#000000">ip_servidor</font><font color="#000000">[</font><font color="#000000">128</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">char</font> <font color="#000000">porta_servidor</font><font color="#000000">[</font><font color="#000000">6</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">char</font> <font color="#000000">camera_entrada2</font><font color="#000000">[</font><font color="#000000">128</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">char</font> <font color="#000000">camera_saida2</font><font color="#000000">[</font><font color="#000000">128</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">char</font> <font color="#000000">qualidadeStr</font><font color="#000000">[</font><font color="#000000">2</font><font color="#000000">]</font><font color="#000000">;</font>
+<font color="#00979c">int</font> <font color="#000000">qualidade</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_camera_entrada</font><font color="#000000">(</font><font color="#005c5f">"ipentrada"</font><font color="#434f54">,</font> <font color="#005c5f">"IP da camera de entrada - HQ"</font><font color="#434f54">,</font> <font color="#000000">camera_entrada</font><font color="#434f54">,</font> <font color="#000000">128</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_camera_saida</font><font color="#000000">(</font><font color="#005c5f">"ipsaida"</font><font color="#434f54">,</font> <font color="#005c5f">"IP da camera de saida - HQ"</font><font color="#434f54">,</font> <font color="#000000">camera_saida</font><font color="#434f54">,</font> <font color="#000000">128</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_camera_entrada2</font><font color="#000000">(</font><font color="#005c5f">"ipentrada2"</font><font color="#434f54">,</font> <font color="#005c5f">"IP da camera de entrada - LQ"</font><font color="#434f54">,</font> <font color="#000000">camera_entrada2</font><font color="#434f54">,</font> <font color="#000000">128</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_camera_saida2</font><font color="#000000">(</font><font color="#005c5f">"ipsaida2"</font><font color="#434f54">,</font> <font color="#005c5f">"IP da camera de saida - LQ"</font><font color="#434f54">,</font> <font color="#000000">camera_saida2</font><font color="#434f54">,</font> <font color="#000000">128</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_identificador</font><font color="#000000">(</font><font color="#005c5f">"identificador"</font><font color="#434f54">,</font> <font color="#005c5f">"Identificador do dispositivo"</font><font color="#434f54">,</font> <font color="#000000">identificador</font><font color="#434f54">,</font> <font color="#000000">64</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_ip_servidor</font><font color="#000000">(</font><font color="#005c5f">"ip_servidor"</font><font color="#434f54">,</font> <font color="#005c5f">"IP do servidor"</font><font color="#434f54">,</font> <font color="#000000">ip_servidor</font><font color="#434f54">,</font> <font color="#000000">64</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_porta_servidor</font><font color="#000000">(</font><font color="#005c5f">"porta_servidor"</font><font color="#434f54">,</font> <font color="#005c5f">"Porta do servidor"</font><font color="#434f54">,</font> <font color="#000000">porta_servidor</font><font color="#434f54">,</font> <font color="#000000">6</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">WiFiManagerParameter</font> <font color="#000000">custom_qualidade</font><font color="#000000">(</font><font color="#005c5f">"qualidadeStr"</font><font color="#434f54">,</font> <font color="#005c5f">"Qualidade (1 para HQ ou 0 para LQ)"</font><font color="#434f54">,</font> <font color="#000000">qualidadeStr</font><font color="#434f54">,</font> <font color="#000000">1</font><font color="#000000">)</font><font color="#000000">;</font>
+
+<font color="#434f54">// Dados do Servidor</font>
+<font color="#00979c">char</font><font color="#434f54">*</font> <font color="#000000">host</font><font color="#000000">;</font> <font color="#434f54">// IP do Servidor</font>
+<font color="#00979c">int</font>   <font color="#000000">port</font><font color="#000000">;</font>            <font color="#434f54">// Porta do Servidor</font>
+
+
+<font color="#434f54">// Flag para salvar dados no FS</font>
+<font color="#00979c">bool</font> <font color="#000000">shouldSaveConfig</font> <font color="#434f54">=</font> <font color="#00979c">false</font><font color="#000000">;</font>
+
+<font color="#434f54">// Flag para resetar o ESP para as configurações originais - DEVE SER USADO PARA TESTES APENAS</font>
+<font color="#00979c">bool</font> <font color="#000000">deveResetar</font> <font color="#434f54">=</font> <font color="#00979c">false</font><font color="#000000">;</font>
+
+
+
+<font color="#434f54">// Pinos do NodeMCU: </font><u><font color="#434f54">https://jgamblog.files.wordpress.com/2018/02/esp8266-nodemcu-pinout.png</font></u><font color="#434f54"></font>
+
+<font color="#95a5a6">/* Ligando o MFRC522 ao NodeMCU (ESP-12F)</font>
+<font color="#95a5a6"> *  RST     = D4</font>
+<font color="#95a5a6"> *  SDA(SS) = D8 </font>
+<font color="#95a5a6"> *  MOSI    = D7</font>
+<font color="#95a5a6"> *  MISO    = D6</font>
+<font color="#95a5a6"> *  SCK     = D5</font>
+<font color="#95a5a6"> *  GND     = GND</font>
+<font color="#95a5a6"> *  3.3V    = 3.3V</font>
+<font color="#95a5a6"> *  RQ      = Não ligado</font>
+<font color="#95a5a6">*/</font>
+
+<font color="#5e6d03">#define</font> <font color="#000000">RST_PIN</font>  <font color="#000000">D4</font> 
+<font color="#5e6d03">#define</font> <font color="#000000">SS_PIN</font>  <font color="#000000">D8</font>  
+<b><font color="#d35400">MFRC522</font></b> <font color="#000000">mfrc522</font><font color="#000000">(</font><font color="#000000">SS_PIN</font><font color="#434f54">,</font> <font color="#000000">RST_PIN</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Instância do MFRC522</font>
+
+
+
+
+<font color="#95a5a6">/* Ligando o LCD I2C ao NodeMCU</font>
+<font color="#95a5a6"> *  SCL = D2</font>
+<font color="#95a5a6"> *  SDA = D3</font>
+<font color="#95a5a6"> *  VCC = 5.0V</font>
+<font color="#95a5a6"> *  GND = GND</font>
+<font color="#95a5a6"> *  Endereço de memória - 0x27</font>
+<font color="#95a5a6"> */</font>
+ 
+<font color="#5e6d03">#define</font> <font color="#000000">SCL_PIN</font> <font color="#000000">D2</font>
+<font color="#5e6d03">#define</font> <font color="#000000">SDA_PIN</font> <font color="#000000">D3</font>
+<b><font color="#d35400">LiquidCrystal_I2C</font></b> <font color="#000000">lcd</font><font color="#000000">(</font><font color="#000000">0x27</font><font color="#434f54">,</font> <font color="#000000">16</font><font color="#434f54">,</font> <font color="#000000">2</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">//FUNÇÃO DO TIPO "LiquidCrystal_I2C"</font>
+
+
+<font color="#434f54">// Pinos para detecção de sentido</font>
+<font color="#5e6d03">#define</font> <font color="#000000">inPin</font> <font color="#000000">D0</font>
+<font color="#5e6d03">#define</font> <font color="#000000">outPin</font> <font color="#000000">D1</font>
+
+
+
+<font color="#434f54">// Prevenção de excesso de registros</font>
+<font color="#00979c">const</font> <font color="#00979c">int</font> <font color="#000000">watchdog</font> <font color="#434f54">=</font> <font color="#000000">5000</font><font color="#000000">;</font>
+<font color="#00979c">unsigned</font> <font color="#00979c">long</font> <font color="#000000">previousMillis</font> <font color="#434f54">=</font> <font color="#000000">0</font><font color="#000000">;</font>
+<font color="#95a5a6">/*</font>
+<font color="#95a5a6">void conectaWifi(){</font>
+<font color="#95a5a6">  //Serial.print("Conectando a ");</font>
+<font color="#95a5a6">  //Serial.println(ssid);</font>
+<font color="#95a5a6">  escreveMensagemLCD("Conectando a", ssid);</font>
+<font color="#95a5a6"></font>
+<font color="#95a5a6">  </font>
+<font color="#95a5a6">  WiFi.begin(ssid, password);</font>
+<font color="#95a5a6">  while (WiFi.status() != WL_CONNECTED) {</font>
+<font color="#95a5a6">    delay(500);</font>
+<font color="#95a5a6">    //Serial.print(".");</font>
+<font color="#95a5a6">  }</font>
+<font color="#95a5a6">  </font>
+<font color="#95a5a6">  //Serial.println(F("\nConectado ao Wi-Fi\n"));</font>
+<font color="#95a5a6">  escreveMensagemLCD("Conectado!", "");</font>
+<font color="#95a5a6">  //Serial.print("Endereço IP: ");</font>
+<font color="#95a5a6">  //Serial.println(WiFi.localIP());</font>
+<font color="#95a5a6">  //Serial.println(F("\nPronto para realizar o envio!"));</font>
+<font color="#95a5a6">  //Serial.println(F("======================================================\n\n")); </font>
+<font color="#95a5a6">}*/</font>
+
+<font color="#00979c">void</font> <font color="#000000">iniciaMFRC</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <b><font color="#d35400">SPI</font></b><font color="#434f54">.</font><font color="#d35400">begin</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>           <font color="#434f54">// Iniciando barramento SPI </font>
+  <font color="#000000">mfrc522</font><font color="#434f54">.</font><font color="#d35400">PCD_Init</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>    <font color="#434f54">// Iniciando MFRC522</font>
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"RFID conectado!"</font><font color="#434f54">,</font> <font color="#005c5f">""</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+
+<font color="#00979c">String</font> <font color="#000000">recuperaRFID</font><font color="#000000">(</font><font color="#00979c">byte</font> <font color="#434f54">*</font><font color="#d35400">buffer</font><font color="#434f54">,</font> <font color="#00979c">byte</font> <font color="#000000">bufferSize</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#00979c">String</font> <font color="#000000">content</font> <font color="#434f54">=</font> <font color="#005c5f">""</font><font color="#000000">;</font>
+  <font color="#5e6d03">for</font> <font color="#000000">(</font><font color="#00979c">byte</font> <font color="#000000">i</font> <font color="#434f54">=</font> <font color="#000000">0</font><font color="#000000">;</font> <font color="#000000">i</font> <font color="#434f54"><</font> <font color="#000000">bufferSize</font><font color="#000000">;</font> <font color="#000000">i</font><font color="#434f54">++</font><font color="#000000">)</font> <font color="#000000">{</font>
+    <font color="#000000">content</font><font color="#434f54">.</font><font color="#d35400">concat</font><font color="#000000">(</font><font color="#00979c">String</font><font color="#000000">(</font><font color="#d35400">buffer</font><font color="#000000">[</font><font color="#000000">i</font><font color="#000000">]</font> <font color="#434f54"><</font> <font color="#000000">0x10</font> <font color="#434f54">?</font> <font color="#005c5f">" 0"</font> <font color="#434f54">:</font> <font color="#005c5f">" "</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">content</font><font color="#434f54">.</font><font color="#d35400">concat</font><font color="#000000">(</font><font color="#00979c">String</font><font color="#000000">(</font><font color="#d35400">buffer</font><font color="#000000">[</font><font color="#000000">i</font><font color="#000000">]</font><font color="#434f54">,</font> <font color="#00979c">HEX</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  <font color="#000000">content</font><font color="#434f54">.</font><font color="#d35400">toUpperCase</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#5e6d03">return</font> <font color="#000000">content</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">leCartao</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Escaneando RFID"</font><font color="#434f54">,</font> <font color="#005c5f">""</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#434f54">// Procura novos cartões a serem lidos</font>
+  <font color="#5e6d03">if</font> <font color="#000000">(</font> <font color="#434f54">!</font> <font color="#000000">mfrc522</font><font color="#434f54">.</font><font color="#d35400">PICC_IsNewCardPresent</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+    <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">50</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#5e6d03">return</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  <font color="#434f54">// Escolhe um dos cartões</font>
+  <font color="#5e6d03">if</font> <font color="#000000">(</font> <font color="#434f54">!</font> <font color="#000000">mfrc522</font><font color="#434f54">.</font><font color="#d35400">PICC_ReadCardSerial</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+    <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">50</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#5e6d03">return</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  <font color="#434f54">// Mostra detalhes do PICC (tag/cartão)</font>
+  <font color="#434f54">//Serial.print(F("UID do Cartão:"));</font>
+  <font color="#00979c">String</font> <font color="#000000">rfid</font> <font color="#434f54">=</font> <font color="#000000">recuperaRFID</font><font color="#000000">(</font><font color="#000000">mfrc522</font><font color="#434f54">.</font><font color="#000000">uid</font><font color="#434f54">.</font><font color="#000000">uidByte</font><font color="#434f54">,</font> <font color="#000000">mfrc522</font><font color="#434f54">.</font><font color="#000000">uid</font><font color="#434f54">.</font><font color="#d35400">size</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#434f54">//Serial.print(rfid);</font>
+  <font color="#434f54">//Serial.println();</font>
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"UID do cartao"</font><font color="#434f54">,</font> <font color="#000000">rfid</font><font color="#000000">)</font><font color="#000000">;</font>
+
+  <font color="#434f54">// Substitui espaços por + para envio de parâmetro via HTTP/GET</font>
+  <font color="#434f54">//Serial.print(F("UID do Cartão sem espaços:"));</font>
+  <font color="#00979c">String</font> <font color="#000000">rfidGET</font> <font color="#434f54">=</font> <font color="#000000">rfid</font><font color="#000000">;</font>
+  <font color="#000000">rfidGET</font><font color="#434f54">.</font><font color="#d35400">replace</font><font color="#000000">(</font><font color="#005c5f">" "</font><font color="#434f54">,</font><font color="#005c5f">"+"</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#434f54">//Serial.print(rfidGET);</font>
+  <font color="#434f54">//Serial.println();</font>
+
+  <font color="#434f54">// Envio para o servidor</font>
+  <font color="#000000">postRFID</font><font color="#000000">(</font><font color="#000000">rfidGET</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">mostraMensagemInicial</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#434f54">//Serial.println(F("Escaneando por cartões e escrevendo a UID:"));</font>
+  <font color="#434f54">//Serial.println("");</font>
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Escaneando RFID"</font><font color="#434f54">,</font> <font color="#005c5f">""</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">postRFID</font><font color="#000000">(</font><font color="#00979c">String</font> <font color="#000000">rfid</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#00979c">unsigned</font> <font color="#00979c">long</font> <font color="#000000">currentMillis</font> <font color="#434f54">=</font> <font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  
+  <font color="#5e6d03">if</font> <font color="#000000">(</font> <font color="#000000">currentMillis</font><font color="#434f54">></font> <font color="#000000">watchdog</font> <font color="#000000">)</font> <font color="#000000">{</font>
+    <font color="#000000">previousMillis</font> <font color="#434f54">=</font> <font color="#000000">currentMillis</font><font color="#000000">;</font>
+    <font color="#d35400">WiFiClient</font> <font color="#d35400">client</font><font color="#000000">;</font>
+  
+    <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#434f54">!</font><font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">connect</font><font color="#000000">(</font><font color="#000000">host</font><font color="#434f54">,</font> <font color="#000000">port</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+      <font color="#434f54">//Serial.println("connection failed");</font>
+      <font color="#5e6d03">return</font><font color="#000000">;</font>
+    <font color="#000000">}</font>
+ 
+    <font color="#00979c">String</font> <font color="#000000">url</font> <font color="#434f54">=</font> <font color="#005c5f">"/smile/class/teste/postRFID.php?"</font><font color="#000000">;</font>
+    <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"rfid="</font> <font color="#434f54">+</font> <font color="#000000">rfid</font><font color="#000000">;</font>
+    <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#000000">qualidade</font> <font color="#434f54">==</font> <font color="#000000">1</font><font color="#000000">)</font> <font color="#000000">{</font> <font color="#434f54">// HQ</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_entrada="</font> <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_entrada</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_saida="</font>   <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_saida</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">}</font>
+    <font color="#5e6d03">else</font><font color="#000000">{</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_entrada="</font> <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_entrada2</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_saida="</font>   <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_saida2</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">}</font>
+    <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&identificador="</font>  <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">identificador</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#434f54">//url += "&ip=";</font>
+    <font color="#434f54">//url += WiFi.localIP().toString();</font>
+    <font color="#434f54">//Serial.println(String(host)+url);</font>
+    <font color="#434f54">// This will send the request to the server</font>
+    <font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#00979c">String</font><font color="#000000">(</font><font color="#005c5f">"GET "</font><font color="#000000">)</font> <font color="#434f54">+</font> <font color="#000000">url</font> <font color="#434f54">+</font> <font color="#005c5f">" HTTP/1.1\r\n"</font> <font color="#434f54">+</font>
+               <font color="#005c5f">"Host: "</font> <font color="#434f54">+</font> <font color="#000000">host</font> <font color="#434f54">+</font> <font color="#005c5f">"\r\n"</font> <font color="#434f54">+</font> 
+               <font color="#005c5f">"Connection: close\r\n\r\n"</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#00979c">unsigned</font> <font color="#00979c">long</font> <font color="#000000">timeout</font> <font color="#434f54">=</font> <font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#5e6d03">while</font> <font color="#000000">(</font><font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">available</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#434f54">==</font> <font color="#000000">0</font><font color="#000000">)</font> <font color="#000000">{</font>
+      <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#434f54">-</font> <font color="#000000">timeout</font> <font color="#434f54">></font> <font color="#000000">1500</font><font color="#000000">)</font> <font color="#000000">{</font>
+        <font color="#434f54">//Serial.println(">>> Client Timeout !");</font>
+        <font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">stop</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+        <font color="#5e6d03">return</font><font color="#000000">;</font>
+      <font color="#000000">}</font>
+    <font color="#000000">}</font>
+  
+    <font color="#434f54">// Read all the lines of the reply from server and print them to Serial</font>
+    <font color="#5e6d03">while</font><font color="#000000">(</font><font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">available</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">{</font>
+      <font color="#00979c">String</font> <font color="#000000">line</font> <font color="#434f54">=</font> <font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">readStringUntil</font><font color="#000000">(</font><font color="#00979c">'\r'</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#434f54">//Serial.print(line);</font>
+    <font color="#000000">}</font>
+  <font color="#000000">}</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">postPASS</font><font color="#000000">(</font><font color="#00979c">int</font> <font color="#000000">tipo</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#00979c">unsigned</font> <font color="#00979c">long</font> <font color="#000000">currentMillis</font> <font color="#434f54">=</font> <font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  
+  <font color="#5e6d03">if</font> <font color="#000000">(</font> <font color="#000000">currentMillis</font><font color="#434f54">></font> <font color="#000000">watchdog</font> <font color="#000000">)</font> <font color="#000000">{</font>
+    <font color="#000000">previousMillis</font> <font color="#434f54">=</font> <font color="#000000">currentMillis</font><font color="#000000">;</font>
+    <font color="#d35400">WiFiClient</font> <font color="#d35400">client</font><font color="#000000">;</font>
+  
+    <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#434f54">!</font><font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">connect</font><font color="#000000">(</font><font color="#000000">host</font><font color="#434f54">,</font> <font color="#000000">port</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+      <font color="#434f54">//Serial.println("connection failed");</font>
+      <font color="#5e6d03">return</font><font color="#000000">;</font>
+    <font color="#000000">}</font>
+ 
+    <font color="#00979c">String</font> <font color="#000000">url</font> <font color="#434f54">=</font> <font color="#005c5f">"/smile/class/teste/postPASS.php?"</font><font color="#000000">;</font>
+    <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"tipo="</font> <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">tipo</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#000000">qualidade</font> <font color="#434f54">==</font> <font color="#000000">1</font><font color="#000000">)</font> <font color="#000000">{</font> <font color="#434f54">// HQ</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_entrada="</font> <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_entrada</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_saida="</font>   <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_saida</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">}</font>
+    <font color="#5e6d03">else</font><font color="#000000">{</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_entrada="</font> <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_entrada2</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#000000">url</font> <font color="#434f54">+=</font> <font color="#005c5f">"&camera_saida="</font>   <font color="#434f54">+</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">camera_saida2</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">}</font>
+    <font color="#434f54">//url += "&ip=";</font>
+    <font color="#434f54">//url += WiFi.localIP().toString();</font>
+    <font color="#434f54">//Serial.println(String(host)+url);</font>
+    <font color="#434f54">// This will send the request to the server</font>
+    <font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#00979c">String</font><font color="#000000">(</font><font color="#005c5f">"GET "</font><font color="#000000">)</font> <font color="#434f54">+</font> <font color="#000000">url</font> <font color="#434f54">+</font> <font color="#005c5f">" HTTP/1.1\r\n"</font> <font color="#434f54">+</font>
+               <font color="#005c5f">"Host: "</font> <font color="#434f54">+</font> <font color="#000000">host</font> <font color="#434f54">+</font> <font color="#005c5f">"\r\n"</font> <font color="#434f54">+</font> 
+               <font color="#005c5f">"Connection: close\r\n\r\n"</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#00979c">unsigned</font> <font color="#00979c">long</font> <font color="#000000">timeout</font> <font color="#434f54">=</font> <font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#5e6d03">while</font> <font color="#000000">(</font><font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">available</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#434f54">==</font> <font color="#000000">0</font><font color="#000000">)</font> <font color="#000000">{</font>
+      <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#434f54">-</font> <font color="#000000">timeout</font> <font color="#434f54">></font> <font color="#000000">5000</font><font color="#000000">)</font> <font color="#000000">{</font>
+        <font color="#434f54">//Serial.println(">>> Client Timeout !");</font>
+        <font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">stop</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+        <font color="#5e6d03">return</font><font color="#000000">;</font>
+      <font color="#000000">}</font>
+    <font color="#000000">}</font>
+  
+    <font color="#434f54">// Read all the lines of the reply from server and print them to Serial</font>
+    <font color="#5e6d03">while</font><font color="#000000">(</font><font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">available</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">{</font>
+      <font color="#00979c">String</font> <font color="#000000">line</font> <font color="#434f54">=</font> <font color="#d35400">client</font><font color="#434f54">.</font><font color="#d35400">readStringUntil</font><font color="#000000">(</font><font color="#00979c">'\r'</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#434f54">//Serial.print(line);</font>
+    <font color="#000000">}</font>
+  <font color="#000000">}</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">iniciaLCD</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#d35400">Wire</font><font color="#434f54">.</font><font color="#d35400">begin</font><font color="#000000">(</font><font color="#000000">SDA_PIN</font><font color="#434f54">,</font> <font color="#000000">SCL_PIN</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Muda pinos padrão do I2C, no NodeMCU os pinos são D2 (SDA) e D1 (SCL)</font>
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">init</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>   <font color="#434f54">// Inicializa o display LCD</font>
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">backlight</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Habilita luz de fundo do display LCD</font>
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Iniciando"</font><font color="#434f54">,</font> <font color="#005c5f">""</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#00979c">String</font> <font color="#000000">linha_1</font><font color="#434f54">,</font> <font color="#00979c">String</font> <font color="#000000">linha_2</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">setCursor</font> <font color="#000000">(</font><font color="#000000">linha_1</font><font color="#434f54">.</font><font color="#d35400">length</font><font color="#000000">(</font><font color="#000000">)</font><font color="#434f54">,</font> <font color="#000000">0</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Posiciona o cursor na posição 0 da linha 1</font>
+  <font color="#5e6d03">for</font> <font color="#000000">(</font><font color="#00979c">int</font> <font color="#000000">i</font> <font color="#434f54">=</font> <font color="#000000">linha_1</font><font color="#434f54">.</font><font color="#d35400">length</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#000000">i</font> <font color="#434f54"><</font> <font color="#000000">16</font><font color="#000000">;</font> <font color="#434f54">++</font><font color="#000000">i</font><font color="#000000">)</font>
+    <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">write</font><font color="#000000">(</font><font color="#00979c">' '</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Limpa linha 1</font>
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">setCursor</font> <font color="#000000">(</font><font color="#000000">linha_2</font><font color="#434f54">.</font><font color="#d35400">length</font><font color="#000000">(</font><font color="#000000">)</font><font color="#434f54">,</font> <font color="#000000">1</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Posiciona o cursor na posição 0 da linha 2</font>
+  <font color="#5e6d03">for</font> <font color="#000000">(</font><font color="#00979c">int</font> <font color="#000000">i</font> <font color="#434f54">=</font> <font color="#000000">linha_2</font><font color="#434f54">.</font><font color="#d35400">length</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#000000">i</font> <font color="#434f54"><</font> <font color="#000000">16</font><font color="#000000">;</font> <font color="#434f54">++</font><font color="#000000">i</font><font color="#000000">)</font>
+    <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">write</font><font color="#000000">(</font><font color="#00979c">' '</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Limpa linha 2</font>
+
+
+
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">setCursor</font><font color="#000000">(</font><font color="#000000">0</font><font color="#434f54">,</font> <font color="#000000">0</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Posiciona o cursor na posição 0 da linha 1</font>
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#000000">linha_1</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Escreve mensagem na linha 1 do LCD</font>
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">setCursor</font><font color="#000000">(</font><font color="#000000">0</font><font color="#434f54">,</font> <font color="#000000">1</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Posiciona o cursor na posição 0 da linha 2</font>
+  <font color="#000000">lcd</font><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#000000">linha_2</font><font color="#000000">)</font><font color="#000000">;</font> <font color="#434f54">// Escreve mensagem na linha 2 do LCD</font>
+<font color="#000000">}</font>
+
+<font color="#434f54">// Callback que avisa a necessidade de salvar as configurações</font>
+<font color="#00979c">void</font> <font color="#000000">saveConfigCallback</font> <font color="#000000">(</font><font color="#000000">)</font> <font color="#000000">{</font>
+  <font color="#434f54">//Serial.println("Deve salvar as configurações");</font>
+  <font color="#000000">shouldSaveConfig</font> <font color="#434f54">=</font> <font color="#00979c">true</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#434f54">// Recupera informações já salvas no sistema de arquivos</font>
+<font color="#00979c">void</font> <font color="#000000">leFS</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Iniciando"</font><font color="#434f54">,</font> <font color="#005c5f">"Lendo FS"</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#434f54">// Formata FS, para testes</font>
+  <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#000000">deveResetar</font><font color="#000000">)</font>
+    <font color="#000000">SPIFFS</font><font color="#434f54">.</font><font color="#000000">format</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+
+  <font color="#434f54">// Lê configuração do JSON do FS</font>
+  <font color="#434f54">//Serial.println("Montando FS");</font>
+
+  <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">SPIFFS</font><font color="#434f54">.</font><font color="#d35400">begin</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+    <font color="#434f54">//Serial.println("Sistema de arquivos montado");</font>
+    <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">SPIFFS</font><font color="#434f54">.</font><font color="#d35400">exists</font><font color="#000000">(</font><font color="#005c5f">"/config.json"</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+      <font color="#434f54">// Arquivo existe, lendo e carregando</font>
+      <font color="#434f54">//Serial.println("Lendo arquivo de config");</font>
+      <font color="#d35400">File</font> <font color="#000000">configFile</font> <font color="#434f54">=</font> <font color="#000000">SPIFFS</font><font color="#434f54">.</font><font color="#d35400">open</font><font color="#000000">(</font><font color="#005c5f">"/config.json"</font><font color="#434f54">,</font> <font color="#005c5f">"r"</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">configFile</font><font color="#000000">)</font> <font color="#000000">{</font>
+        <font color="#434f54">//Serial.println("Abriu arquivo de configuração");</font>
+        <b><font color="#d35400">size_t</font></b> <font color="#d35400">size</font> <font color="#434f54">=</font> <font color="#000000">configFile</font><font color="#434f54">.</font><font color="#d35400">size</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+        <font color="#434f54">// Aloca buffer para abrigar conteúdo do arquivo</font>
+        <font color="#000000">std</font><font color="#434f54">:</font><font color="#434f54">:</font><font color="#000000">unique_ptr</font><font color="#434f54"><</font><font color="#00979c">char</font><font color="#000000">[</font><font color="#000000">]</font><font color="#434f54">></font> <font color="#000000">buf</font><font color="#000000">(</font><font color="#00979c">new</font> <font color="#00979c">char</font><font color="#000000">[</font><font color="#d35400">size</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+
+        <font color="#000000">configFile</font><font color="#434f54">.</font><font color="#d35400">readBytes</font><font color="#000000">(</font><font color="#000000">buf</font><font color="#434f54">.</font><font color="#d35400">get</font><font color="#000000">(</font><font color="#000000">)</font><font color="#434f54">,</font> <font color="#d35400">size</font><font color="#000000">)</font><font color="#000000">;</font>
+        <b><font color="#d35400">DynamicJsonBuffer</font></b> <font color="#000000">jsonBuffer</font><font color="#000000">;</font>
+        <b><font color="#d35400">JsonObject</font></b><font color="#434f54">&</font> <font color="#000000">json</font> <font color="#434f54">=</font> <font color="#000000">jsonBuffer</font><font color="#434f54">.</font><font color="#d35400">parseObject</font><font color="#000000">(</font><font color="#000000">buf</font><font color="#434f54">.</font><font color="#d35400">get</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+        <font color="#000000">json</font><font color="#434f54">.</font><font color="#d35400">printTo</font><font color="#000000">(</font><b><font color="#d35400">Serial</font></b><font color="#000000">)</font><font color="#000000">;</font>
+        <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">json</font><font color="#434f54">.</font><font color="#d35400">success</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+          <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Iniciando"</font><font color="#434f54">,</font> <font color="#005c5f">"Leu FS!"</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#434f54">//Serial.println("\nJSON parseado");</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_entrada</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_entrada"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_saida</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_saida"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_entrada2</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_entrada2"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_saida2</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_saida2"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">identificador</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"identificador"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">ip_servidor</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"ip_servidor"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">porta_servidor</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"porta_servidor"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+          <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">qualidadeStr</font><font color="#434f54">,</font> <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"qualidadeStr"</font><font color="#000000">]</font><font color="#000000">)</font><font color="#000000">;</font>
+        <font color="#000000">}</font> <font color="#5e6d03">else</font> <font color="#000000">{</font>
+          <font color="#434f54">//Serial.println("Falhou ao ler JSON de configuração");</font>
+          <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Iniciando"</font><font color="#434f54">,</font> <font color="#005c5f">"Falha lendo FS"</font><font color="#000000">)</font><font color="#000000">;</font>
+        <font color="#000000">}</font>
+        <font color="#000000">configFile</font><font color="#434f54">.</font><font color="#d35400">close</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#000000">}</font>
+    <font color="#000000">}</font>
+  <font color="#000000">}</font> <font color="#5e6d03">else</font> <font color="#000000">{</font>
+    <font color="#434f54">//Serial.println("Falhou ao montar o FS");</font>
+    <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Iniciando"</font><font color="#434f54">,</font> <font color="#005c5f">"Falha no FS"</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  <font color="#434f54">// Termina leitura</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">printaVariaveisConfiguradas</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#434f54">//Serial.println("IP do servidor:                  "+ String(ip_servidor));</font>
+  <font color="#434f54">//Serial.println("Porta do servidor:               "+ String(porta_servidor));</font>
+  <font color="#434f54">//Serial.println("ID do dispositivo:               "+ String(identificador));</font>
+  <font color="#434f54">//Serial.println("IP da camera de entrada - HQ:    "+ String(camera_entrada));</font>
+  <font color="#434f54">//Serial.println("IP da camera de saida - HQ:      "+ String(camera_saida));</font>
+  <font color="#434f54">//Serial.println("IP da camera de entrada - LQ:    "+ String(camera_entrada2));</font>
+  <font color="#434f54">//Serial.println("IP da camera de saida - LQ:      "+ String(camera_saida2));</font>
+  <font color="#434f54">//Serial.println("Qualidade (1 para HQ 0 para LQ): "+ String(qualidadeStr));</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">preparaWifiEFS</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#434f54">// Inicialização do WifiManager é local, só é preciso dele uma vez.</font>
+  <font color="#000000">leFS</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <b><font color="#d35400">WiFiManager</font></b> <font color="#000000">wifiManager</font><font color="#000000">;</font>
+
+  <font color="#434f54">// Configuração da notificação de callback de salvamento</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#000000">setSaveConfigCallback</font><font color="#000000">(</font><font color="#000000">saveConfigCallback</font><font color="#000000">)</font><font color="#000000">;</font>
+  
+  <font color="#434f54">// Adicionados os parâmetros</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_ip_servidor</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_porta_servidor</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_camera_entrada</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_camera_saida</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_camera_entrada2</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_camera_saida2</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_qualidade</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">addParameter</font><font color="#000000">(</font><font color="#434f54">&</font><font color="#000000">custom_identificador</font><font color="#000000">)</font><font color="#000000">;</font>
+
+  <font color="#434f54">//reset settings - for testing</font>
+  <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#000000">deveResetar</font><font color="#000000">)</font>
+    <font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">resetSettings</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+
+  <font color="#434f54">// recupera SSID e senha salvos e tenta conectar</font>
+  <font color="#434f54">// Se não conecta então cria um AP com o nome</font>
+  <font color="#434f54">// Fica num loop bloqueante até ser conectado</font>
+
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Tentando conectar"</font><font color="#434f54">,</font><font color="#005c5f">""</font><font color="#000000">)</font><font color="#000000">;</font>
+  
+  <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#434f54">!</font><font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#000000">autoConnectCustom</font><font color="#000000">(</font><font color="#005c5f">"SMILE"</font><font color="#434f54">,</font> <font color="#005c5f">"projeto2018"</font><font color="#000000">)</font><font color="#000000">)</font> 
+    <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Falha de conexao"</font><font color="#434f54">,</font><font color="#005c5f">"Configure via AP"</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#434f54">!</font><font color="#000000">wifiManager</font><font color="#434f54">.</font><font color="#d35400">autoConnect</font><font color="#000000">(</font><font color="#005c5f">"SMILE"</font><font color="#434f54">,</font> <font color="#005c5f">"projeto2018"</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">{</font>
+    <font color="#434f54">//Serial.println("Falhou em conectar - timeout");</font>
+    <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Timeout"</font><font color="#434f54">,</font><font color="#005c5f">"Tente novamente"</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">3000</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#434f54">//reset e tenta de novo, talvez por em sono profundo</font>
+    <b><font color="#d35400">ESP</font></b><font color="#434f54">.</font><font color="#d35400">reset</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">5000</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+
+  <font color="#434f54">//Serial.println("Conectado ao Wi-Fi, salvando parâmetros");</font>
+  <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Conectado ao Wi-Fi"</font><font color="#434f54">,</font><font color="#005c5f">"Salvando dados"</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#434f54">// Lê parâmetros atualizados</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_entrada</font><font color="#434f54">,</font> <font color="#000000">custom_camera_entrada</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_saida</font><font color="#434f54">,</font> <font color="#000000">custom_camera_saida</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_entrada2</font><font color="#434f54">,</font> <font color="#000000">custom_camera_entrada2</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">camera_saida2</font><font color="#434f54">,</font> <font color="#000000">custom_camera_saida2</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">identificador</font><font color="#434f54">,</font> <font color="#000000">custom_identificador</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">ip_servidor</font><font color="#434f54">,</font> <font color="#000000">custom_ip_servidor</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">porta_servidor</font><font color="#434f54">,</font> <font color="#000000">custom_porta_servidor</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">strcpy</font><font color="#000000">(</font><font color="#000000">qualidadeStr</font><font color="#434f54">,</font> <font color="#000000">custom_qualidade</font><font color="#434f54">.</font><font color="#000000">getValue</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+
+  <font color="#434f54">// Salva os parâmetros novos no FS</font>
+  <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">shouldSaveConfig</font><font color="#000000">)</font> <font color="#000000">{</font>
+    <font color="#434f54">//Serial.println("saving config");</font>
+    <b><font color="#d35400">DynamicJsonBuffer</font></b> <font color="#000000">jsonBuffer</font><font color="#000000">;</font>
+    <b><font color="#d35400">JsonObject</font></b><font color="#434f54">&</font> <font color="#000000">json</font> <font color="#434f54">=</font> <font color="#000000">jsonBuffer</font><font color="#434f54">.</font><font color="#d35400">createObject</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_entrada"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">camera_entrada</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_saida"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">camera_saida</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_entrada2"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">camera_entrada2</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"camera_saida2"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">camera_saida2</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"identificador"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">identificador</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"ip_servidor"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">ip_servidor</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"porta_servidor"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">porta_servidor</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#000000">[</font><font color="#005c5f">"qualidadeStr"</font><font color="#000000">]</font> <font color="#434f54">=</font> <font color="#000000">qualidadeStr</font><font color="#000000">;</font>
+
+    <font color="#d35400">File</font> <font color="#000000">configFile</font> <font color="#434f54">=</font> <font color="#000000">SPIFFS</font><font color="#434f54">.</font><font color="#d35400">open</font><font color="#000000">(</font><font color="#005c5f">"/config.json"</font><font color="#434f54">,</font> <font color="#005c5f">"w"</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#434f54">!</font><font color="#000000">configFile</font><font color="#000000">)</font> <font color="#000000">{</font>
+      <font color="#434f54">//Serial.println("Falha ao abrir ou escrever arquivo de configuracao");</font>
+    <font color="#000000">}</font>
+
+    <font color="#000000">json</font><font color="#434f54">.</font><font color="#d35400">printTo</font><font color="#000000">(</font><b><font color="#d35400">Serial</font></b><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">json</font><font color="#434f54">.</font><font color="#d35400">printTo</font><font color="#000000">(</font><font color="#000000">configFile</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">configFile</font><font color="#434f54">.</font><font color="#d35400">close</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#434f54">// Fim do save</font>
+  <font color="#000000">}</font>
+
+  <font color="#434f54">//Serial.println("IP local");</font>
+  <font color="#434f54">//Serial.println(WiFi.localIP());</font>
+
+  <font color="#434f54">// Carrega variáveis para memória</font>
+  <font color="#000000">leFS</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">host</font> <font color="#434f54">=</font> <font color="#000000">ip_servidor</font><font color="#000000">;</font>
+  <font color="#000000">port</font> <font color="#434f54">=</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">porta_servidor</font><font color="#000000">)</font><font color="#434f54">.</font><font color="#d35400">toInt</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">qualidade</font> <font color="#434f54">=</font> <font color="#00979c">String</font><font color="#000000">(</font><font color="#000000">qualidadeStr</font><font color="#000000">)</font><font color="#434f54">.</font><font color="#d35400">toInt</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">IN</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+    <font color="#434f54">//Serial.println("Entrada");</font>
+    <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Entrada"</font><font color="#434f54">,</font><font color="#005c5f">""</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">postPASS</font><font color="#000000">(</font><font color="#000000">2</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">1000</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">OUT</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+    <font color="#434f54">//Serial.println("Saída");</font>
+    <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Saida"</font><font color="#434f54">,</font><font color="#005c5f">""</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#000000">postPASS</font><font color="#000000">(</font><font color="#000000">3</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">1000</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">detectaEntrada</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#00979c">int</font> <font color="#000000">in</font> <font color="#434f54">=</font> <font color="#434f54">!</font><font color="#d35400">digitalRead</font><font color="#000000">(</font><font color="#000000">inPin</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#00979c">int</font> <font color="#000000">out</font> <font color="#434f54">=</font> <font color="#434f54">!</font><font color="#d35400">digitalRead</font><font color="#000000">(</font><font color="#000000">outPin</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#000000">in</font><font color="#000000">)</font><font color="#000000">{</font>
+    <font color="#000000">IN</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  <font color="#5e6d03">else</font> <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#000000">out</font><font color="#000000">)</font><font color="#000000">{</font>
+    <font color="#000000">OUT</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font> 
+  <font color="#000000">}</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">bool</font> <font color="#000000">checaReset</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#d35400">analogRead</font><font color="#000000">(</font><font color="#000000">A0</font><font color="#000000">)</font> <font color="#434f54">></font> <font color="#000000">800</font><font color="#000000">)</font><font color="#000000">{</font>
+    <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Reset"</font><font color="#434f54">,</font><font color="#005c5f">"do dispositivo"</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">3000</font><font color="#000000">)</font><font color="#000000">;</font>
+    <font color="#5e6d03">return</font> <font color="#00979c">true</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  <font color="#5e6d03">else</font>
+    <font color="#5e6d03">return</font> <font color="#00979c">false</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">checaBotaoQualidade</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">{</font>
+  <font color="#5e6d03">if</font><font color="#000000">(</font><font color="#d35400">analogRead</font><font color="#000000">(</font><font color="#000000">A0</font><font color="#000000">)</font> <font color="#434f54">></font> <font color="#000000">800</font><font color="#000000">)</font> <font color="#434f54">// deve alterar qualidade da imagem</font>
+  <font color="#000000">{</font>
+      <font color="#000000">qualidade</font> <font color="#434f54">=</font> <font color="#000000">(</font><font color="#000000">qualidade</font> <font color="#434f54">==</font> <font color="#000000">1</font> <font color="#000000">)</font><font color="#434f54">?</font> <font color="#000000">(</font><font color="#000000">0</font><font color="#000000">)</font> <font color="#434f54">:</font> <font color="#000000">(</font><font color="#000000">1</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#000000">escreveMensagemLCD</font><font color="#000000">(</font><font color="#005c5f">"Qualidade"</font><font color="#434f54">,</font> <font color="#000000">(</font><font color="#000000">qualidade</font> <font color="#434f54">==</font> <font color="#000000">1</font> <font color="#000000">)</font><font color="#434f54">?</font> <font color="#000000">(</font><font color="#005c5f">"HQ"</font><font color="#000000">)</font> <font color="#434f54">:</font> <font color="#000000">(</font><font color="#005c5f">"LQ"</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+      <font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">2000</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  <font color="#5e6d03">else</font>
+    <font color="#5e6d03">return</font><font color="#000000">;</font>
+  
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#5e6d03">setup</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#000000">{</font>
+  <font color="#434f54">////Serial.begin(115200);</font>
+  <font color="#000000">iniciaLCD</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">iniciaMFRC</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">deveResetar</font> <font color="#434f54">=</font> <font color="#000000">checaReset</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">preparaWifiEFS</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font> 
+<font color="#434f54">//  conectaWifi();</font>
+  <font color="#000000">iniciaMFRC</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">mostraMensagemInicial</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">printaVariaveisConfiguradas</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">pinMode</font><font color="#000000">(</font><font color="#000000">inPin</font><font color="#434f54">,</font> <font color="#00979c">INPUT</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#d35400">pinMode</font><font color="#000000">(</font><font color="#000000">outPin</font><font color="#434f54">,</font> <font color="#00979c">INPUT</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#5e6d03">loop</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#000000">{</font> 
+  <font color="#000000">leCartao</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">detectaEntrada</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#000000">checaBotaoQualidade</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+  <font color="#434f54">//delay(1000);</font>
+<font color="#000000">}</font>
+
+</pre>

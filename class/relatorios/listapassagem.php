@@ -4,11 +4,12 @@ require_once("../../db/DBClass.php");
 $banco = new DBClass();
 $resultado = $banco->query("SELECT rfid.rfid, funcionario.nome, passagem.horario, passagem.fotoIN, passagem.fotoOUT FROM (((rfid INNER JOIN funcionario ON rfid.idFuncionario = funcionario.idFuncionario ) INNER JOIN rfidPassagem ON rfidPassagem.rfid = rfid.rfid) INNER JOIN passagem ON rfidPassagem.idPassagem = passagem.idPassagem) ORDER BY (horario) DESC");
  ?>
- <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+ <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4"><div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+</div>
        <h2>Registro das Passagens</h2>
        <br/><br/>
        <div class="table-responsive">
-         <table id="tabela" class="table table-striped table-sm">
+         <table id="tabela_relatorio" class="table table-striped table-sm">
            <thead>
              <tr>
                <th>Horário</th>
@@ -23,7 +24,7 @@ $resultado = $banco->query("SELECT rfid.rfid, funcionario.nome, passagem.horario
           while ($row = $resultado->fetch_assoc()) {
             //var_dump($row);
          		echo "<tr>";
-            echo "<td>".date('H:i:s d-m-Y',strtotime($row['horario']))."</td>";
+            echo "<td>".date('d/m/Y H:i:s',strtotime($row['horario']))."</td>";
             echo "<td>".$row['nome']."</td>";
          		echo "<td>".$row['rfid']."</td>";
             echo "<td><a href=\"".$row['fotoIN']."\"><img src=\"".$row['fotoIN']."\" height=\"180\" width=\"320\"></a></td>";

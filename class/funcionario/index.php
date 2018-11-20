@@ -4,7 +4,8 @@ require_once("../../db/DBClass.php");
 $banco = new DBClass();
 $resultado = $banco->query("SELECT `idFuncionario`, `nome`, `email`, DATE_FORMAT(`nascimento`,'%d/%m/%Y') AS `nascimento`, cpf FROM `funcionario` WHERE 1  ");
  ?>
- <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+ <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4"><div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+</div>
        <h2>Funcionários</h2>
        <a href="create.php">
          <button type="button" class="btn btn-primary" >Novo Funcionário</button>
