@@ -126,8 +126,8 @@ for($i = 1; $i <= days_in_month($mes , $ano ); $i++){
             foreach ($tabela as $ponto)  {
 				echo "<tr>";
 				echo "<td>".$ponto['nome']."</td>";
-				echo "<td>".$ponto['entrada']->format('d/m/Y H:s:s')."</td>";
 				echo "<td>".$ponto['entrada']->format('d/m/Y H:i:s')."</td>";
+				echo "<td>".$ponto['saida']->format('d/m/Y H:i:s')."</td>";
 				echo "<td>".$ponto['tempo']->format('%H:%I:%S')."</td>";
 				echo "</tr>";
            	}

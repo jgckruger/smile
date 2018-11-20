@@ -12,13 +12,13 @@ $tipo = 0;
 
 require_once('../../db/DBClass.php');
 $banco = new DBClass();
+$rfid = substr($rfid, 1);
 $query = "INSERT INTO `registrosRFID`(`campo`) VALUES ('" . $rfid. "')";
 //echo($query);
 
 $resultado = $banco->query($query);
 
 
-$rfid = substr($rfid, 1);
 // $queryNova = "START TRANSACTION;
 // INSERT INTO `passagem`(`tipoPassagem`) VALUES (" . $tipo . ");
 // SET @passagem_id := LAST_INSERT_ID();
