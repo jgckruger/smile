@@ -15,7 +15,7 @@ $banco = new DBClass();
 
 <?php
 if(isset($_POST['Submit'])) {
-	$rfid = $banco->escapeString($_POST['rfid']);
+	$rfid = str_replace('_', ' ', $banco->escapeString($_POST['rfid']));
 	$idFuncionario = $banco->escapeString($_POST['idFuncionario']);
 
 	// checking empty fields
@@ -33,8 +33,8 @@ if(isset($_POST['Submit'])) {
 		// if all the fields are filled (not empty)
 
 		//insert data to database
-		#$str = "INSERT INTO `rfid` (`rfid`, `idFuncionario`) VALUES ('$rfid', '$idFuncionario');";
-		echo($str);
+		$str = "INSERT INTO `rfid` (`rfid`, `idFuncionario`) VALUES ('$rfid', '$idFuncionario');";
+		//echo($str);
 		$resultado = $banco->query("INSERT INTO `rfid` (`rfid`, `idFuncionario`) VALUES ('$rfid', '$idFuncionario');");
 		//display success message
 		//echo "<p>entrou aqui n era</p>";

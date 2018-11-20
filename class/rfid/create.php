@@ -21,7 +21,7 @@ $resultado2 = $banco->query("SELECT DISTINCT `campo` FROM `registrosRFID` WHERE 
     				<select class="form-control" name="rfid">
 							<?php
 							while ($row2 = $resultado2->fetch_assoc()) {
-								echo("<option value=". $row2['campo'].">".$row2['campo']."</option>");
+								echo("<option value=". str_replace(' ', '_', $row2['campo']).">".$row2['campo']."</option>");
 							}?>
     				</select>
 
