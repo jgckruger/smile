@@ -33,7 +33,7 @@ if(isset($_POST['Submit'])) {
 		// if all the fields are filled (not empty)
 
 		//insert data to database
-		$str = "INSERT INTO `rfid` (`rfid`, `idFuncionario`) VALUES ('$rfid', '$idFuncionario');";
+		#$str = "INSERT INTO `rfid` (`rfid`, `idFuncionario`) VALUES ('$rfid', '$idFuncionario');";
 		echo($str);
 		$resultado = $banco->query("INSERT INTO `rfid` (`rfid`, `idFuncionario`) VALUES ('$rfid', '$idFuncionario');");
 		//display success message

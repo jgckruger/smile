@@ -4,6 +4,8 @@ require_once("../../header.php");
 require_once("../../db/DBClass.php");
 $banco = new DBClass();
 $resultado = $banco->query("SELECT `idFuncionario`, `nome`, `email`, DATE_FORMAT(`nascimento`,'%d/%m/%Y') AS `nascimento`, cpf FROM `funcionario` WHERE 1  ");
+
+$resultado2 = $banco->query("SELECT DISTINCT `campo` FROM `registrosRFID` WHERE `campo` not in (SELECT `campo` FROM `registrosRFID` INNER JOIN `rfid` ON `registrosRFID`.`campo` = `rfid`.`rfid`)");
 ?>
 
 <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4"><div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -14,8 +16,15 @@ $resultado = $banco->query("SELECT `idFuncionario`, `nome`, `email`, DATE_FORMAT
 	<form action="createResult.php" method="post" name="form1">
 		<table width="25%" border="0">
 			<tr>
-				<td>RFID</td>
-				<td><input type="text" name="rfid"></td>
+
+    			<label for="rfid">Identificador RFID</label>
+    				<select class="form-control" name="rfid">
+							<?php
+							while ($row2 = $resultado2->fetch_assoc()) {
+								echo("<option value=". $row2['campo'].">".$row2['campo']."</option>");
+							}?>
+    				</select>
+
 			</tr>
 			<tr>
 
