@@ -14,7 +14,6 @@ $banco = new DBClass();
 
 
 <?php
-
 function validaCPF($cpf = null) {
 
 	// Verifica se um número foi informado
@@ -68,9 +67,11 @@ if(isset($_POST['Submit'])) {
 	$email = $banco->escapeString($_POST['email']);
 	$cpf = $banco->escapeString($_POST['cpf']);
 
+	//echo "cpf:".string($cpf);
 	// checking empty fields
-	if(empty($nome) || empty($nascimento) || empty($email) || empty($cpf)) {
-		//echo "<p>entrou aqui n era</p>";
+	
+	if(empty($nome) || empty($nascimento) || empty($email)|| empty($cpf) || !validaCPF($cpf)) {
+		echo "<div>";
 		if(empty($nome)) {
 			echo "<font color='red'>O campo Nome está vazio.</font><br/>";
 		}
@@ -86,13 +87,10 @@ if(isset($_POST['Submit'])) {
 		if(empty($cpf)) {
 			echo "<font color='red'>O campo CPF está vazio.</font><br/>";
 		}
-
-    if(validaCPF($cpf)){
-      echo "<font color='red'>O CPF é inválido.</font><br/>";
-    }
-
-		//link to the previous page
-		echo "<br/><a href='javascript:self.history.back();'>Voltar</a>";
+		if(!validaCPF($cpf)){
+		  echo "<font color='red'>O CPF é inválido.</font><br/>";
+		}
+		echo "</div>";
 	} else {
 		// if all the fields are filled (not empty)
 
@@ -100,7 +98,7 @@ if(isset($_POST['Submit'])) {
 		$resultado = $banco->query("INSERT INTO funcionario(nome,nascimento,email, cpf) VALUES('$nome','$nascimento','$email', '$cpf')");
 		//display success message
 		//echo "<p>entrou aqui n era</p>";
-		echo "<font color='green'>Funcionario adicionado com sucesso!";
+		echo "<font color='green'>Funcionario adicionado com sucesso!!!";
 		echo "<br><a href='index.php'>Ver resultado</a>";
 	}
 }
